@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 import type { Station, MetroRoute } from "@/types/metro";
 import { getStations } from "@/services/metro/metroService";
-
+import { getRoute } from "@/services/metro/metroService";
 interface MetroState {
   stations: Station[];
   fromStation: Station | null;
@@ -28,6 +28,7 @@ interface MetroState {
 
   clearRoute: () => void;
   fetchStations: () => Promise<void>;
+  fetchRoute: () => Promise<void>;
 }
 
 export const useMetroStore = create<MetroState>((set, get) => ({
@@ -71,7 +72,51 @@ export const useMetroStore = create<MetroState>((set, get) => ({
       });
     }
   },
+fetchRoute: async () => {
+  const { fromStation, toStation, isRouteLoading } = get();
 
+  // Validate station selection
+  if (!fromStation || !toStation) {
+    set({
+      routeError: "لطفاً ایستگاه مبدأ و مقصد را انتخاب کنید.",
+    });
+    return;
+  }
+
+  if (fromStation.id === toStation.id) {
+    set({
+      routeError: "مبدأ و مقصد نمی‌توانند یکسان باشند.",
+    });
+    return;
+  }
+
+  // Prevent duplicate requests
+  if (isRouteLoading) return;
+
+  set({
+    isRouteLoading: true,
+    routeError: null,
+    route: null,
+  });
+
+  try {
+    const data = await getRoute(fromStation.id, toStation.id);
+
+    set({
+      route: data.route,
+    });
+  } catch (error) {
+    console.error("Get Route Error:", error);
+
+    set({
+      routeError: "محاسبه مسیر با خطا مواجه شد. لطفاً دوباره تلاش کنید.",
+    });
+  } finally {
+    set({
+      isRouteLoading: false,
+    });
+  }
+},
   setFromStation: (station) => set({ fromStation: station, route: null }),
 
   setToStation: (station) => set({ toStation: station, route: null }),
