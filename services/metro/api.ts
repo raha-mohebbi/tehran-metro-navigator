@@ -3,7 +3,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://metto.ir/api",
+  baseURL: "/api/metro",
   headers: {
     "Content-Type": "application/json",
   },
